@@ -597,7 +597,7 @@ func (ss *Sim) RunNoGUI() {
 	leabra.OpenLogFiles(ss.Loops, ss.Stats, netName, runName, [][]string{cfg.Test})
 
 	mpi.Printf("Running %d Runs starting at %d\n", ss.Config.Run.Runs, ss.Config.Run.Run)
-	ss.Loops.Loop(Train, Run).Counter.SetCurMaxPlusN(ss.Config.Run.Run, ss.Config.Run.Runs)
+	ss.Loops.Loop(Test, Trial).Counter.SetCurMaxPlusN(ss.Config.Run.Run, ss.Config.Run.Runs)
 
 	leabra.CloseLogFiles(ss.Loops, ss.Stats, Cycle)
 }
