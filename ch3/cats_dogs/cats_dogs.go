@@ -433,10 +433,10 @@ func (ss *Sim) ConfigStats() {
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		counterFunc(mode, level, phase == Start)
 	})
-	runNameFunc := leabra.StatRunName(ss.Stats, ss.Current, ss.Loops, net, Trial)
-	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
-		runNameFunc(mode, level, phase == Start)
-	})
+	// runNameFunc := leabra.StatRunName(ss.Stats, ss.Current, ss.Loops, net, Trial)
+	// ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+	// 	runNameFunc(mode, level, phase == Start)
+	// })
 	trialNameFunc := leabra.StatTrialName(ss.Stats, ss.Current, ss.Loops, net, Trial)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		trialNameFunc(mode, level, phase == Start)
@@ -484,6 +484,11 @@ func (ss *Sim) ConfigStats() {
 				tsr.AppendRowFloat(stat)
 			}
 		}
+	})
+
+	stateFunc := leabra.StatLayerState(ss.Stats, net, Test, Trial, true, "Act", "Name", "Identity", "Color", "FavoriteFood", "Size", "Species", "FavoriteToy")
+	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+		stateFunc(mode, level, phase == Start)
 	})
 }
 
