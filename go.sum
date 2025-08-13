@@ -36,8 +36,8 @@ github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc h1:U9qPSI2PIWSS1
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/dlclark/regexp2 v1.11.0 h1:G/nrcoOa7ZXlpoa/91N3X7mM3r8eIlMBBJZvsz/mxKI=
 github.com/dlclark/regexp2 v1.11.0/go.mod h1:DHkYz0B9wPfa6wondMfaivmHpzrQ3v9q8cnmRbL6yW8=
-github.com/emer/emergent/v2 v2.0.0-dev0.1.7.0.20250721194303-26f94339ac13 h1:EvUKtHvXOo42IzIQyfyTgesLuRNBRMlkFahesTAyLOw=
-github.com/emer/emergent/v2 v2.0.0-dev0.1.7.0.20250721194303-26f94339ac13/go.mod h1:1Wun8vWhEaLoQgSboRQYDzg0DjELLLlFvhHqIDVS3s4=
+github.com/emer/emergent/v2 v2.0.0-dev0.1.7.0.20250809001012-15a5e68996b3 h1:CQDNKmPMvKQ/vc/YuJrDBx4K0XEyIZx9FAo5qoWJ10M=
+github.com/emer/emergent/v2 v2.0.0-dev0.1.7.0.20250809001012-15a5e68996b3/go.mod h1:1Wun8vWhEaLoQgSboRQYDzg0DjELLLlFvhHqIDVS3s4=
 github.com/emer/etensor v0.0.0-20250128231607-f3fea92f0b80 h1:wi1b32KLdolICuwNcv3RP3z+Z4JwHOrBtygDmjck7Kk=
 github.com/emer/etensor v0.0.0-20250128231607-f3fea92f0b80/go.mod h1:0+Uicv4Sa6RguJ1QPuRzdFK39pJvHlBY0goIBwvuaUo=
 github.com/emer/leabra/v2 v2.0.0-dev0.5.5.0.20250717210932-d7c52f1fba3f h1:m3cCTTZPmxxSk/aU1+nZcd8fiJKCfLBfaw1T8aOU08I=
