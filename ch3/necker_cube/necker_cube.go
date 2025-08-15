@@ -2,11 +2,11 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// catsdogs: This project explores a simple **semantic network** intended
-// to represent a (very small) set of relationships among different
-// features used to represent a set of entities in the world.
-// In our case, we represent some features of cats and dogs:
-// their color, size, favorite food, and favorite toy.
+//go:build not
+
+// necker_cube: This simulation explores the use of constraint satisfaction
+// in processing ambiguous stimuli, in this case the *Necker cube*, which
+// can be viewed as a cube in one of two orientations, where people flip back and forth.
 package neckercube
 
 //go:generate core generate -add-types -add-funcs
@@ -21,6 +21,7 @@ import (
 	"cogentcore.org/core/base/metadata"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/enums"
+	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/tree"
 	"cogentcore.org/lab/base/mpi"
@@ -39,10 +40,10 @@ import (
 	"github.com/emer/leabra/v2/leabra"
 )
 
-//go:embed cats_dogs_pats.tsv cats_dogs.wts
+//go:embed necker_cube.wts
 var embedfs embed.FS
 
-//go:embed README.md
+//go:embed *.png README.md
 var readme embed.FS
 
 // Modes are the looping modes (Stacks) for running and statistics.
@@ -78,11 +79,22 @@ const (
 // as arguments to methods, and provides the core GUI interface (note the view tags
 // for the fields which provide hints to how things should be displayed).
 type Sim struct {
-	// the patterns to use
-	Patterns *table.Table `new-window:"+" display:"no-inline"`
 
-	// simulation configuration parameters -- set by .toml config file and / or args
-	Config *Config `new-window:"+"`
+	// the variance parameter for Gaussian noise added to unit activations on every cycle
+	Noise float32 `min:"0" step:"0.01"`
+
+	// apply sodium-gated potassium adaptation mechanisms that cause the neuron to reduce spiking over time
+	KNaAdapt bool
+
+	// total number of cycles to run per trial; increase to 1,000 when testing adaptation
+	Cycles int `default:"100,1000"`
+
+	// TODO Q: Confirm removal
+	// // the patterns to use
+	// Patterns *table.Table `new-window:"+" display:"no-inline"`
+
+	// // simulation configuration parameters -- set by .toml config file and / or args
+	// Config *Config `new-window:"+"`
 
 	// Net is the network: click to view / edit parameters for layers, paths, etc.
 	Net *leabra.Network `new-window:"+" display:"no-inline"`
@@ -126,10 +138,10 @@ func (ss *Sim) Body() *core.Body      { return ss.GUI.Body }
 
 func (ss *Sim) ConfigSim() {
 	ss.Root, _ = tensorfs.NewDir("Root")
-	tensorfs.CurRoot = ss.Root
-	ss.Net = leabra.NewNetwork(ss.Config.Name)
+	tensorfs.CurRoot = ss.Root 
+	ss.Net = leabra.NewNetwork(ss.Config.Name) 
 	ss.Params.Config(LayerParams, PathParams, ss.Config.Params.Sheet, ss.Config.Params.Tag, reflect.ValueOf(ss))
-	ss.Patterns = &table.Table{}
+	// ss.Patterns = &table.Table{} // TODO remove
 	ss.RandSeeds.Init(100) // max 100 runs
 	ss.InitRandSeed(0)
 	ss.OpenPatterns()
@@ -138,6 +150,8 @@ func (ss *Sim) ConfigSim() {
 	ss.ConfigLoops()
 	ss.ConfigStats()
 }
+
+func (ss *Sim) Defaults( 
 
 func (ss *Sim) ConfigEnv() {
 	// Can be called multiple times -- don't re-create
