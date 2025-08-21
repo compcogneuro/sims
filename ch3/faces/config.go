@@ -69,8 +69,8 @@ type Config struct {
 }
 
 func (cfg *Config) Defaults() {
-	cfg.Name = "CatsAndDogs"
-	cfg.Title = "Cats and Dogs"
-	cfg.URL = "https://github.com/CompCogNeuro/sims/blob/main/ch4/associator/README.md"
-	cfg.Doc = "Explores a simple **semantic network** intended to represent a (very small) set of relationships among different features used to represent a set of entities in the world.  In our case, we represent some features of cats and dogs: their color, size, favorite food, and favorite toy."
+	cfg.Name = "Faces"
+	cfg.Title = "Faces"
+	cfg.URL = "https://github.com/CompCogNeuro/sims/blob/main/ch3/faces/README.md"
+	cfg.Doc = "This project explores how sensory inputs (in this case simple cartoon faces) can be categorized in multiple different ways, to extract the relevant information and collapse across the irrelevant. It allows you to explore both bottom-up processing from face image to categories, and top-down processing from category values to face images (imagery), including the ability to dynamically iterate both bottom-up and top-down to cleanup partial inputs (partially occluded face images)."
 }

@@ -25,6 +25,7 @@ import (
 	"cogentcore.org/core/base/metadata"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/enums"
+	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/tree"
 	"cogentcore.org/lab/base/mpi"
@@ -276,7 +277,8 @@ func (ss *Sim) ConfigLoops() {
 
 	ls.AddStack(Test, Trial).
 		AddLevel(Epoch, 1).
-		AddLevel(Trial, ntrls)
+		AddLevel(Trial, ntrls).
+		AddLevel(Cycle, 20)
 
 	leabra.LooperStandard(ls, ss.Net, ss.NetViewUpdater, 15, 19, Cycle, Trial, Train)
 
@@ -340,14 +342,16 @@ func (ss *Sim) OpenPatterns() {
 	if errors.Log(err) != nil {
 		fmt.Println(err)
 	}
-	dt = ss.PartialPatterns
+	ss.Patterns = dt
+
+	dt = table.New()
 	metadata.SetName(dt, "FacesPartial")
 	metadata.SetDoc(dt, "Partial face testing patterns")
 	err = dt.OpenFS(embedfs, "partial_faces.tsv", tensor.Tab)
 	if errors.Log(err) != nil {
 		fmt.Println(err)
 	}
-	ss.Patterns = dt
+	ss.PartialPatterns = dt
 }
 
 ////////  Inputs
@@ -541,22 +545,32 @@ func (ss *Sim) StatCounters(mode, level enums.Enum) string {
 //////// GUI
 
 func (ss *Sim) ConfigNetView(nv *netview.NetView) {
-	labs := []string{" Chloe Socks Sylv Garf Fuzz Daisy Fido Spot Snoop Penny",
-		" black white brown orange", "bugs grass scraps shoe", "small  med  large", "cat     dog", "string feath bone shoe"}
+	labs := []string{"happy sad", "female  male", "Albt Bett Lisa Mrk Wnd Zane"}
 	nv.ConfigLabels(labs)
 
-	lays := []string{"Name", "Color", "FavoriteFood", "Size", "Species", "FavoriteToy"}
+	emot := nv.LayerByName("Emotion")
+	hs := nv.LabelByName(labs[0])
+	hs.Pose = emot.Pose
+	hs.Pose.Pos.Y += .1
+	hs.Pose.Scale.SetMulScalar(0.5)
+	hs.Pose.RotateOnAxis(0, 1, 0, 180)
 
-	for li, lnm := range lays {
-		ly := nv.LayerByName(lnm)
-		lbl := nv.LabelByName(labs[li])
-		lbl.Pose = ly.Pose
-		lbl.Pose.Pos.Y += .2
-		lbl.Pose.Pos.Z += .02
-		lbl.Pose.Scale.SetMul(math32.Vector3{0.4, 0.08, 0.5})
-	}
+	gend := nv.LayerByName("Gender")
+	fm := nv.LabelByName(labs[1])
+	fm.Pose = gend.Pose
+	fm.Pose.Pos.X -= .05
+	fm.Pose.Pos.Y += .1
+	fm.Pose.Scale.SetMulScalar(0.5)
+	fm.Pose.RotateOnAxis(0, 1, 0, 180)
 
-	nv.SceneXYZ().Camera.Pose.Pos.Set(0, 1.5, 3.0)
+	id := nv.LayerByName("Identity")
+	nms := nv.LabelByName(labs[2])
+	nms.Pose = id.Pose
+	nms.Pose.Pos.Y += .1
+	nms.Pose.Scale.SetMulScalar(0.5)
+	nms.Pose.RotateOnAxis(0, 1, 0, 180)
+
+	nv.SceneXYZ().Camera.Pose.Pos.Set(0, 1.7, 2.37)
 	nv.SceneXYZ().Camera.LookAt(math32.Vec3(0, 0, 0), math32.Vec3(0, 1, 0))
 }
 
@@ -577,12 +591,46 @@ func (ss *Sim) ConfigGUI(b tree.Node) {
 
 	ss.ConfigNetView(nv)
 
+	// ss.GUI.AddMiscPlotTab("ClustFaces")
+	// ss.GUI.AddMiscPlotTab("ClustEmote")
+	// ss.GUI.AddMiscPlotTab("ClustGend")
+	// ss.GUI.AddMiscPlotTab("ClustIdent")
+	// ss.GUI.AddMiscPlotTab("ProjectionRandom")
+	// ss.GUI.AddMiscPlotTab("ProjectionEmoteGend")
+
 	ss.StatsInit()
 	ss.GUI.FinalizeGUI(false)
 }
 
 func (ss *Sim) MakeToolbar(p *tree.Plan) {
 	ss.GUI.AddLooperCtrl(p, ss.Loops)
+
+	////////////////////////////////////////////////
+	tree.Add(p, func(w *core.Separator) {})
+	ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Set Input",
+		Icon:    icons.Image,
+		Tooltip: "set whether the input comes from the bottom-up (Input layer) or top-down (higher-level Category layers)",
+		Active:  egui.ActiveAlways,
+		Func: func() {
+			core.CallFunc(ss.GUI.Body, ss.SetInput)
+		},
+	})
+	ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Set Patterns",
+		Icon:    icons.Image,
+		Tooltip: "set which set of patterns to present: full or partial faces",
+		Active:  egui.ActiveAlways,
+		Func: func() {
+			core.CallFunc(ss.GUI.Body, ss.SetPatterns)
+		},
+	})
+	ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Cluster Plot",
+		Icon:    icons.Image,
+		Tooltip: "tests all the patterns and generates cluster plots and projections onto different dimensions",
+		Active:  egui.ActiveAlways,
+		Func: func() {
+			// TODO ss.ClusterPlots()
+		},
+	})
 
 	tree.Add(p, func(w *core.Separator) {})
 }
