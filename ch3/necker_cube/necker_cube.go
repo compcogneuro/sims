@@ -19,6 +19,7 @@ import (
 	"cogentcore.org/core/base/metadata"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/enums"
+
 	// "cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/tree"
@@ -31,10 +32,10 @@ import (
 	"cogentcore.org/lab/tensorfs"
 	"github.com/emer/emergent/v2/egui"
 	"github.com/emer/emergent/v2/env"
+	"github.com/emer/emergent/v2/etime"
 	"github.com/emer/emergent/v2/looper"
 	"github.com/emer/emergent/v2/netview"
 	"github.com/emer/emergent/v2/paths"
-	"github.com/emer/emergent/v2/relpos"
 	"github.com/emer/leabra/v2/leabra"
 )
 
@@ -98,7 +99,7 @@ type Sim struct {
 	Net *leabra.Network `new-window:"+" display:"no-inline"`
 
 	// Params manages network parameter setting.
-	Params leabra.Params `display:"inline"`
+	Params leabra.Params`display:"add-fields"`
 
 	// Loops are the control loops for running the sim, in different Modes
 	// across stacks of Levels.
@@ -173,7 +174,7 @@ func (ss *Sim) ConfigEnv() {
 func (ss *Sim) ConfigNet(net *leabra.Network) {
 	net.SetRandSeed(ss.RandSeeds[0]) // init new separate random seed, using run = 0
 
-	nc := net.AddLayer4D("NeckerCube", 1, 2, 4, 2, leabra.InputLayer)
+	nc := net.AddLayer4D("NeckerCube", leabra.InputLayer, 1, 2, 4, 2)
 
 	full := paths.NewFull()
 	net.ConnectLayers(nc, nc, full, leabra.LateralPath)
@@ -187,24 +188,39 @@ func (ss *Sim) ConfigNet(net *leabra.Network) {
 // InitWeights initializes weights.
 func (ss *Sim) InitWeights(net *leabra.Network) {
 	net.InitWeights()
-	// net.OpenWeightsFS(embedfs, "cats_dogs.wts")
+	net.OpenWeightsFS(embedfs, "necker_cube.wts")
 }
 
-func (ss *Sim) ApplyParams() {
+func (ss *Sim) ApplyParams() { 
 	ss.Params.ApplyAll(ss.Net)
+	ly := ss.Net.LayerByName("NeckerCube")
+	ly.Params.Act.Noise.Var = float64(ss.Noise)
+	ly.Params.Act.KNa.On = ss.KNaAdapt
+	ly.Params.Act.Update()
+	if ss.Loops != nil {
+		cyc := ss.Loops.Stacks[etime.Test].Loops[etime.Cycle]
+		cyc.Counter.Max = ss.Cycles
+		cyc.EventByName("Quarter1").AtCounter = ss.Cycles / 4
+		cyc.EventByName("Quarter2").AtCounter = 2 * (ss.Cycles / 4)
+		cyc.EventByName("MinusPhase:End").AtCounter = 3 * (ss.Cycles / 4)
+	}
 }
 
-////////  Init, utils
+////////////////////////////////////////////////////////////////////////////////
+// 	    Init, utils
 
 // Init restarts the run, and initializes everything, including network weights
 // and resets the epoch log table
 func (ss *Sim) Init() {
-	ss.Loops.ResetCounters()
-	// ss.SetRunName() // TODO remove?
+	ss.Loops.ResetCounters()	
+	ss.SetRunName() // TODO remove?
 	ss.InitRandSeed(0)
+	ss.GUI.StopNow()
 	ss.ApplyParams()
 	ss.StatsInit()
 	ss.NewRun()
+	// ss.ViewUpdate.RecordSyns()	//What are these?
+	// ss.ViewUpdate.Update()
 }
 
 // InitRandSeed initializes the random seed based on current training run number
@@ -225,19 +241,17 @@ func (ss *Sim) NetViewUpdater(mode enums.Enum) *leabra.NetViewUpdate {
 func (ss *Sim) ConfigLoops() {
 	ls := looper.NewStacks()
 
-	cycles := 100
-	plusPhase := 50
-
-	ev := ss.Envs.ByMode(Test).(*env.FixedTable)
-	ntrls := ev.Table.NumRows()
-
+	// ev := ss.Envs.ByMode(Test).(*env.FixedTable)
+	ntrls := 100 // was 	ntrls := ev.Table.NumRows()
+	cycles := ss.Cycles
+	// plusPhase := 50 // Needed? TODO
 	ls.AddStack(Test, Trial).
 		AddLevel(Epoch, 1).
 		AddLevel(Trial, ntrls).
 		AddLevel(Cycle, cycles)
 
-	leabra.LooperStandard(ls, ss.Net, ss.NetViewUpdater, cycles-plusPhase, cycles-1, Cycle, Trial, Train)
-
+	leabra.LooperStandard(ls, ss.Net, ss.NetViewUpdater, cycles-25, cycles-1, Cycle, Trial, Train)
+	// leabra.LooperSimCycleAndLearn(ls, ss.Net, &ss.Context, &ss.ViewUpdate) // std algo code // TODO ???
 	ls.Stacks[Test].OnInit.Add("Init", ss.Init)
 
 	ls.AddOnStartToLoop(Trial, "ApplyInputs", func(mode enums.Enum) {
@@ -278,10 +292,23 @@ func (ss *Sim) ApplyInputs(mode Modes) {
 		}
 	}
 	net.ApplyExts()
+
+	//TODO: Adapt following code to code above
+
+	// 	ly := net.LayerByName("NeckerCube")
+	// tsr := ss.Stats.F32Tensor("Inputs")
+	// tsr.SetShape([]int{16})
+	// if tsr.Float1D(0) != 1 {
+	// 	for i := range tsr.Values {
+	// 		tsr.Values[i] = 1
+	// 	}
+	// }
+	// ly.ApplyExt(tsr)
+
 }
 
 // NewRun intializes a new Run level of the model.
-func (ss *Sim) NewRun() {
+func (ss *Sim) NewRun() { //TODO: Q left off here Aug 26 
 	ctx := ss.Net.Context()
 	ss.Envs.ByMode(Test).Init(0)
 	ctx.Reset()
