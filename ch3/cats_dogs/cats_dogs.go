@@ -9,7 +9,7 @@
 // their color, size, favorite food, and favorite toy.
 package catsdogs
 
-//go: core generate -add-types -add-funcs
+//go:generate core generate -add-types -add-funcs
 
 import (
 	"embed"
