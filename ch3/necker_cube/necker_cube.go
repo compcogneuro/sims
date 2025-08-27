@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-//go:build not
-
 // necker_cube: This simulation explores the use of constraint satisfaction
 // in processing ambiguous stimuli, in this case the *Necker cube*, which
 // can be viewed as a cube in one of two orientations, where people flip back and forth.
@@ -21,7 +19,7 @@ import (
 	"cogentcore.org/core/base/metadata"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/enums"
-	"cogentcore.org/core/icons"
+	// "cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/tree"
 	"cogentcore.org/lab/base/mpi"
@@ -91,10 +89,10 @@ type Sim struct {
 
 	// TODO Q: Confirm removal
 	// // the patterns to use
-	// Patterns *table.Table `new-window:"+" display:"no-inline"`
+	Patterns *table.Table `new-window:"+" display:"no-inline"`
 
 	// // simulation configuration parameters -- set by .toml config file and / or args
-	// Config *Config `new-window:"+"`
+	Config *Config `new-window:"+"`
 
 	// Net is the network: click to view / edit parameters for layers, paths, etc.
 	Net *leabra.Network `new-window:"+" display:"no-inline"`
@@ -151,8 +149,7 @@ func (ss *Sim) ConfigSim() {
 	ss.ConfigStats()
 }
 
-func (ss *Sim) Defaults( 
-
+// func (ss *Sim) Defaults() 
 func (ss *Sim) ConfigEnv() {
 	// Can be called multiple times -- don't re-create
 	var tst *env.FixedTable
@@ -176,39 +173,10 @@ func (ss *Sim) ConfigEnv() {
 func (ss *Sim) ConfigNet(net *leabra.Network) {
 	net.SetRandSeed(ss.RandSeeds[0]) // init new separate random seed, using run = 0
 
-	name := net.AddLayer2D("Name", leabra.InputLayer, 1, 10)
-	iden := net.AddLayer2D("Identity", leabra.InputLayer, 1, 10)
-	color := net.AddLayer2D("Color", leabra.InputLayer, 1, 4)
-	food := net.AddLayer2D("FavoriteFood", leabra.InputLayer, 1, 4)
-	size := net.AddLayer2D("Size", leabra.InputLayer, 1, 3)
-	spec := net.AddLayer2D("Species", leabra.InputLayer, 1, 2)
-	toy := net.AddLayer2D("FavoriteToy", leabra.InputLayer, 1, 4)
+	nc := net.AddLayer4D("NeckerCube", 1, 2, 4, 2, leabra.InputLayer)
 
-	name.AddClass("Id") // share params
-	iden.AddClass("Id")
-
-	one2one := paths.NewOneToOne()
 	full := paths.NewFull()
-
-	net.BidirConnectLayers(name, iden, one2one)
-	net.BidirConnectLayers(color, iden, full)
-	net.BidirConnectLayers(food, iden, full)
-	net.BidirConnectLayers(size, iden, full)
-	net.BidirConnectLayers(spec, iden, full)
-	net.BidirConnectLayers(toy, iden, full)
-
-	iden.PlaceAbove(name)
-	color.PlaceAbove(iden)
-	// gend.Pos.XAlign = relpos.Right
-	food.PlaceAbove(iden)
-	food.Pos.XAlign = relpos.Right
-	size.PlaceAbove(color)
-	spec.PlaceAbove(color)
-	spec.Pos.XAlign = relpos.Right
-	spec.Pos.XOffset = 2
-	toy.PlaceAbove(food)
-	toy.Pos.XAlign = relpos.Right
-	toy.Pos.XOffset = 1
+	net.ConnectLayers(nc, nc, full, leabra.LateralPath)
 
 	net.Build()
 	net.Defaults()
@@ -219,7 +187,7 @@ func (ss *Sim) ConfigNet(net *leabra.Network) {
 // InitWeights initializes weights.
 func (ss *Sim) InitWeights(net *leabra.Network) {
 	net.InitWeights()
-	net.OpenWeightsFS(embedfs, "cats_dogs.wts")
+	// net.OpenWeightsFS(embedfs, "cats_dogs.wts")
 }
 
 func (ss *Sim) ApplyParams() {
@@ -324,12 +292,12 @@ func (ss *Sim) NewRun() {
 
 func (ss *Sim) OpenPatterns() {
 	dt := table.New()
-	metadata.SetName(dt, "CatsAndDogs")
-	metadata.SetDoc(dt, "Face testing patterns")
-	err := dt.OpenFS(embedfs, "cats_dogs_pats.tsv", tensor.Tab)
-	if errors.Log(err) != nil {
-		fmt.Println(err)
-	}
+	// metadata.SetName(dt, "CatsAndDogs")
+	// metadata.SetDoc(dt, "Face testing patterns")
+	// err := dt.OpenFS(embedfs, "cats_dogs_pats.tsv", tensor.Tab)
+	// if errors.Log(err) != nil {
+		// fmt.Println(err)
+	// } // TODO remove 
 	ss.Patterns = dt
 }
 
