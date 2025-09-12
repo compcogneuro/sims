@@ -39,14 +39,12 @@ import (
 	"cogentcore.org/lab/tensorfs"
 	"github.com/emer/emergent/v2/egui"
 	"github.com/emer/emergent/v2/env"
-	"github.com/emer/emergent/v2/estats"
 	"github.com/emer/emergent/v2/etime"
 	"github.com/emer/emergent/v2/looper"
 	"github.com/emer/emergent/v2/netview"
 	"github.com/emer/emergent/v2/paths"
 	"github.com/emer/emergent/v2/relpos"
 	"github.com/emer/etensor/plot/plotcore"
-	"github.com/emer/etensor/tensor/stats/clust"
 	"github.com/emer/leabra/v2/leabra"
 	"golang.org/x/exp/rand"
 )
@@ -568,26 +566,18 @@ func (ss *Sim) StatCounters(mode, level enums.Enum) string {
 
 // ClusterPlots computes all the cluster plots from the faces input data.
 func (ss *Sim) ClusterPlots() {
-	ix := table.NewView(ss.Patterns)
-	dfunc := "MinFunc"
+	dt := table.NewView(ss.Patterns)
 
-	// func (smat *SimMat) TableColumnStd(ix *table.IndexView, column, labNm string, blankRepeat bool, met metric.StdMetrics) error
-
-	simat := smat.TableColumnStd(ix, "Input", "Name", false, metric.L2Norm)
-	// ss.Current.Dir("ClustFaces").DirTable
-
-	// estats.ClusterPlot(ss.GUI.PlotByName("ClustFaces"), ptix, "Input", "Name", clust.MinDist)
-	// func Plot(pt *table.Table, root *Node, dmat, labels tensor.Tensor)
-	cluster.Plot(ix, cluster.Cluster(dfunc, dmat))
-	cluster.Plot(ss.GUI.PlotByName("ClustEmote"), ptix, "Emotion", "Name", clust.MinDist)
-	estats.ClusterPlot(ss.GUI.PlotByName("ClustGend"), ptix, "Gender", "Name", clust.MinDist)
-	estats.ClusterPlot(ss.GUI.PlotByName("ClustIdent"), ptix, "Identity", "Name", clust.MinDist)
+	cluster.PlotFromTable(ss.GUI.Tabs.NewPlot("ClustFaces"), dt, metric.MetricL2Norm, cluster.Min, "Input", "Name")
+	cluster.PlotFromTable(ss.GUI.Tabs.NewPlot("ClustEmote"), dt, metric.MetricL2Norm, cluster.Min, "Emotion", "Name")
+	cluster.PlotFromTable(ss.GUI.Tabs.NewPlot("ClustGend"), dt, metric.MetricL2Norm, cluster.Min, "Gender", "Name")
+	cluster.PlotFromTable(ss.GUI.Tabs.NewPlot("ClustIdent"), dt, metric.MetricL2Norm, cluster.Min, "Identity", "Name")
 	ss.ProjectionPlot()
 }
 
 func (ss *Sim) ProjectionPlot() {
-	rvec0 := ss.Stats.F32Tensor("rvec0")
-	rvec1 := ss.Stats.F32Tensor("rvec1")
+	rvec0 := ss.Stats.Float32("rvec0")
+	rvec1 := ss.Stats.Float32("rvec1")
 	rvec0.SetShape([]int{256})
 	rvec1.SetShape([]int{256})
 	for i := range rvec1.Values {

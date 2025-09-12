@@ -3,12 +3,14 @@ module github.com/CompCogNeuro/sims/v2
 go 1.23.4
 
 require (
-	cogentcore.org/core v0.3.13-0.20250731222552-d1d0e5942de9
-	cogentcore.org/lab v0.1.2
+	cogentcore.org/core v0.3.13-0.20250807231547-ae1e4f43215b
+	cogentcore.org/lab v0.1.3-0.20250912200215-7613cc2a3f0e
 	github.com/anthonynsimon/bild v0.13.0
 	github.com/emer/emergent/v2 v2.0.0-dev0.1.7.0.20250809001012-15a5e68996b3
+	github.com/emer/etensor v0.0.0-20250128231607-f3fea92f0b80
 	github.com/emer/leabra/v2 v2.0.0-dev0.5.5.0.20250717210932-d7c52f1fba3f
 	github.com/emer/v1vision v0.1.1-0.20241223003153-dd6818448b3b
+	golang.org/x/exp v0.0.0-20250128182459-e0ece0dbea4c
 )
 
 require (
@@ -42,13 +44,12 @@ require (
 	github.com/pelletier/go-toml/v2 v2.1.2-0.20240227203013-2b69615b5d55 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/tdewolff/parse/v2 v2.7.19 // indirect
-	golang.org/x/exp v0.0.0-20250128182459-e0ece0dbea4c // indirect
 	golang.org/x/image v0.25.0 // indirect
 	golang.org/x/mod v0.25.0 // indirect
-	golang.org/x/net v0.41.0 // indirect
-	golang.org/x/sync v0.15.0 // indirect
-	golang.org/x/sys v0.33.0 // indirect
-	golang.org/x/text v0.26.0 // indirect
-	golang.org/x/tools v0.33.0 // indirect
+	golang.org/x/net v0.42.0 // indirect
+	golang.org/x/sync v0.16.0 // indirect
+	golang.org/x/sys v0.34.0 // indirect
+	golang.org/x/text v0.27.0 // indirect
+	golang.org/x/tools v0.34.0 // indirect
 	gonum.org/v1/gonum v0.15.1 // indirect
 )
