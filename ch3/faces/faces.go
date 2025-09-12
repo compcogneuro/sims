@@ -31,18 +31,24 @@ import (
 	"cogentcore.org/lab/base/mpi"
 	"cogentcore.org/lab/base/randx"
 	"cogentcore.org/lab/plot"
+	"cogentcore.org/lab/stats/cluster"
+	"cogentcore.org/lab/stats/metric"
 	"cogentcore.org/lab/stats/stats"
 	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensor"
 	"cogentcore.org/lab/tensorfs"
 	"github.com/emer/emergent/v2/egui"
 	"github.com/emer/emergent/v2/env"
+	"github.com/emer/emergent/v2/estats"
 	"github.com/emer/emergent/v2/etime"
 	"github.com/emer/emergent/v2/looper"
 	"github.com/emer/emergent/v2/netview"
 	"github.com/emer/emergent/v2/paths"
 	"github.com/emer/emergent/v2/relpos"
+	"github.com/emer/etensor/plot/plotcore"
+	"github.com/emer/etensor/tensor/stats/clust"
 	"github.com/emer/leabra/v2/leabra"
+	"golang.org/x/exp/rand"
 )
 
 //go:embed faces.tsv partial_faces.tsv faces.wts
@@ -542,6 +548,118 @@ func (ss *Sim) StatCounters(mode, level enums.Enum) string {
 	return counters
 }
 
+// ClusterPlot does one cluster plot on given table column name
+// and label name
+// func ClusterPlot(plt *plotcore.Editor, ix *table.Table, colNm, lblNm string, dfunc cluster.MetricFunc) {
+// 	nm, _ := ix.Table.MetaData["name"]
+// 	smat := &simat.SimMat{}
+// 	smat.TableColumnStd(ix, colNm, lblNm, false, metric.Euclidean)
+// 	pt := &table.Table{}
+// 	cluster.Plot(pt, cluster.Glom(smat, dfunc), smat)
+// 	plt.Name = colNm
+// 	plt.Options.Title = "Cluster Plot of: " + nm + " " + colNm
+// 	plt.Options.XAxis = "X"
+// 	plt.SetTable(pt)
+// 	// order of params: on, fixMin, min, fixMax, max
+// 	plt.SetColumnOptions("X", plotcore.Off, plotcore.FixMin, 0, plotcore.FloatMax, 0)
+// 	plt.SetColumnOptions("Y", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
+// 	plt.SetColumnOptions("Label", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
+// }
+
+// ClusterPlots computes all the cluster plots from the faces input data.
+func (ss *Sim) ClusterPlots() {
+	ix := table.NewView(ss.Patterns)
+	dfunc := "MinFunc"
+
+	// func (smat *SimMat) TableColumnStd(ix *table.IndexView, column, labNm string, blankRepeat bool, met metric.StdMetrics) error
+
+	simat := smat.TableColumnStd(ix, "Input", "Name", false, metric.L2Norm)
+	// ss.Current.Dir("ClustFaces").DirTable
+
+	// estats.ClusterPlot(ss.GUI.PlotByName("ClustFaces"), ptix, "Input", "Name", clust.MinDist)
+	// func Plot(pt *table.Table, root *Node, dmat, labels tensor.Tensor)
+	cluster.Plot(ix, cluster.Cluster(dfunc, dmat))
+	cluster.Plot(ss.GUI.PlotByName("ClustEmote"), ptix, "Emotion", "Name", clust.MinDist)
+	estats.ClusterPlot(ss.GUI.PlotByName("ClustGend"), ptix, "Gender", "Name", clust.MinDist)
+	estats.ClusterPlot(ss.GUI.PlotByName("ClustIdent"), ptix, "Identity", "Name", clust.MinDist)
+	ss.ProjectionPlot()
+}
+
+func (ss *Sim) ProjectionPlot() {
+	rvec0 := ss.Stats.F32Tensor("rvec0")
+	rvec1 := ss.Stats.F32Tensor("rvec1")
+	rvec0.SetShape([]int{256})
+	rvec1.SetShape([]int{256})
+	for i := range rvec1.Values {
+		rvec0.Values[i] = .15 * (2*rand.Float32() - 1)
+		rvec1.Values[i] = .15 * (2*rand.Float32() - 1)
+	}
+
+	tst := ss.Stats.Table(Test, Trial)
+	nr := tst.Rows
+	dt := ss.Stats.MiscTable("ProjectionTable")
+	ss.ConfigProjectionTable(dt)
+
+	for r := 0; r < nr; r++ {
+		// single emotion dimension from sad to happy
+		emote := 0.5*tst.TensorFloat1D("Emotion_Act", r, 0) + -0.5*tst.TensorFloat1D("Emotion_Act", r, 1)
+		emote += .1 * (2*rand.Float64() - 1) // some jitter so labels are readable
+		// single geneder dimension from male to femail
+		gend := 0.5*tst.TensorFloat1D("Gender_Act", r, 0) + -0.5*tst.TensorFloat1D("Gender_Act", r, 1)
+		gend += .1 * (2*rand.Float64() - 1) // some jitter so labels are readable
+		input := tst.Tensor("Input_Act", r).(*tensor.Float32)
+		rprjn0 := metric.InnerProduct32(rvec0.Values, input.Values)
+		rprjn1 := metric.InnerProduct32(rvec1.Values, input.Values)
+		dt.SetFloat("Trial", r, tst.Float("Trial", r))
+		dt.SetString("TrialName", r, tst.StringValue("TrialName", r))
+		dt.SetFloat("GendPrjn", r, gend)
+		dt.SetFloat("EmotePrjn", r, emote)
+		dt.SetFloat("RndPrjn0", r, float64(rprjn0))
+		dt.SetFloat("RndPrjn1", r, float64(rprjn1))
+	}
+
+	plt := ss.GUI.PlotByName("ProjectionRandom")
+	plt.Options.Title = "Face Random Projection Plot"
+	plt.Options.XAxis = "RndPrjn0"
+	plt.SetTable(dt)
+	plt.Options.Lines = false
+	plt.Options.Points = true
+	// order of params: on, fixMin, min, fixMax, max
+	plt.SetColumnOptions("TrialName", plotcore.On, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
+	plt.SetColumnOptions("GendPrjn", plotcore.Off, plotcore.FixMin, -1, plotcore.FixMax, 1)
+	plt.SetColumnOptions("RndPrjn0", plotcore.Off, plotcore.FloatMin, -1, plotcore.FloatMax, 1)
+	plt.SetColumnOptions("RndPrjn1", plotcore.On, plotcore.FloatMin, -1, plotcore.FloatMax, 1)
+
+	plt = ss.GUI.PlotByName("ProjectionEmoteGend")
+	plt.Options.Title = "Face Emotion / Gender Projection Plot"
+	plt.Options.XAxis = "GendPrjn"
+	plt.SetTable(dt)
+	plt.Options.Lines = false
+	plt.Options.Points = true
+	// order of params: on, fixMin, min, fixMax, max
+	plt.SetColumnOptions("TrialName", plotcore.On, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
+	plt.SetColumnOptions("GendPrjn", plotcore.Off, plotcore.FixMin, -1, plotcore.FixMax, 1)
+	plt.SetColumnOptions("EmotePrjn", plotcore.On, plotcore.FixMin, -1, plotcore.FixMax, 1)
+}
+
+func (ss *Sim) ConfigProjectionTable(dt *table.Table) {
+	metadata.SetName(dt, "ProjectionTable")
+	metadata.SetDoc(dt, "projection of data onto dimension")
+	metadata.Set(dt, "read-only", "true")
+
+	if dt.NumColumns() == 0 {
+		dt.AddIntColumn("Trial")
+		dt.AddStringColumn("TrialName")
+		dt.AddFloat64Column("GendPrjn")
+		dt.AddFloat64Column("EmotePrjn")
+		dt.AddFloat64Column("RndPrjn0")
+		dt.AddFloat64Column("RndPrjn1")
+	}
+	ev := ss.Envs.ByMode(etime.Test).(*env.FixedTable)
+	nt := ev.Table.NumRows() // number in indexview
+	dt.SetNumRows(nt)
+}
+
 //////// GUI
 
 func (ss *Sim) ConfigNetView(nv *netview.NetView) {
@@ -628,7 +746,7 @@ func (ss *Sim) MakeToolbar(p *tree.Plan) {
 		Tooltip: "tests all the patterns and generates cluster plots and projections onto different dimensions",
 		Active:  egui.ActiveAlways,
 		Func: func() {
-			// TODO ss.ClusterPlots()
+			ss.ClusterPlots()
 		},
 	})
 
