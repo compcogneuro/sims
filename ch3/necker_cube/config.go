@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package catsdogs
+package neckercube
 
 import "github.com/emer/emergent/v2/egui"
 
@@ -68,9 +68,9 @@ type Config struct {
 	Log LogConfig `display:"add-fields"`
 }
 
-func (cfg *Config) Defaults() {
-	cfg.Name = "CatsAndDogs"
-	cfg.Title = "Cats and Dogs"
+func (cfg *Config) Defaults() { //TODO: Needs to be written 
+	cfg.Name = "NeckerCube"
+	cfg.Title = "Necker Cube"
 	cfg.URL = "https://github.com/CompCogNeuro/sims/blob/main/ch4/associator/README.md"
 	cfg.Doc = "Explores a simple **semantic network** intended to represent a (very small) set of relationships among different features used to represent a set of entities in the world.  In our case, we represent some features of cats and dogs: their color, size, favorite food, and favorite toy."
 }

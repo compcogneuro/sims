@@ -2,11 +2,9 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// catsdogs: This project explores a simple **semantic network** intended
-// to represent a (very small) set of relationships among different
-// features used to represent a set of entities in the world.
-// In our case, we represent some features of cats and dogs:
-// their color, size, favorite food, and favorite toy.
+// necker_cube: This simulation explores the use of constraint satisfaction
+// in processing ambiguous stimuli, in this case the *Necker cube*, which
+// can be viewed as a cube in one of two orientations, where people flip back and forth.
 package neckercube
 
 //go:generate core generate -add-types -add-funcs
@@ -21,6 +19,8 @@ import (
 	"cogentcore.org/core/base/metadata"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/enums"
+
+	// "cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/tree"
 	"cogentcore.org/lab/base/mpi"
@@ -32,17 +32,17 @@ import (
 	"cogentcore.org/lab/tensorfs"
 	"github.com/emer/emergent/v2/egui"
 	"github.com/emer/emergent/v2/env"
+	"github.com/emer/emergent/v2/etime"
 	"github.com/emer/emergent/v2/looper"
 	"github.com/emer/emergent/v2/netview"
 	"github.com/emer/emergent/v2/paths"
-	"github.com/emer/emergent/v2/relpos"
 	"github.com/emer/leabra/v2/leabra"
 )
 
-//go:embed cats_dogs_pats.tsv cats_dogs.wts
+//go:embed necker_cube.wts
 var embedfs embed.FS
 
-//go:embed README.md
+//go:embed *.png README.md
 var readme embed.FS
 
 // Modes are the looping modes (Stacks) for running and statistics.
@@ -78,17 +78,28 @@ const (
 // as arguments to methods, and provides the core GUI interface (note the view tags
 // for the fields which provide hints to how things should be displayed).
 type Sim struct {
-	// the patterns to use
+
+	// the variance parameter for Gaussian noise added to unit activations on every cycle
+	Noise float32 `min:"0" step:"0.01"`
+
+	// apply sodium-gated potassium adaptation mechanisms that cause the neuron to reduce spiking over time
+	KNaAdapt bool
+
+	// total number of cycles to run per trial; increase to 1,000 when testing adaptation
+	Cycles int `default:"100,1000"`
+
+	// TODO Q: Confirm removal
+	// // the patterns to use
 	Patterns *table.Table `new-window:"+" display:"no-inline"`
 
-	// simulation configuration parameters -- set by .toml config file and / or args
+	// // simulation configuration parameters -- set by .toml config file and / or args
 	Config *Config `new-window:"+"`
 
 	// Net is the network: click to view / edit parameters for layers, paths, etc.
 	Net *leabra.Network `new-window:"+" display:"no-inline"`
 
 	// Params manages network parameter setting.
-	Params leabra.Params `display:"inline"`
+	Params leabra.Params`display:"add-fields"`
 
 	// Loops are the control loops for running the sim, in different Modes
 	// across stacks of Levels.
@@ -126,10 +137,10 @@ func (ss *Sim) Body() *core.Body      { return ss.GUI.Body }
 
 func (ss *Sim) ConfigSim() {
 	ss.Root, _ = tensorfs.NewDir("Root")
-	tensorfs.CurRoot = ss.Root
-	ss.Net = leabra.NewNetwork(ss.Config.Name)
+	tensorfs.CurRoot = ss.Root 
+	ss.Net = leabra.NewNetwork(ss.Config.Name) 
 	ss.Params.Config(LayerParams, PathParams, ss.Config.Params.Sheet, ss.Config.Params.Tag, reflect.ValueOf(ss))
-	ss.Patterns = &table.Table{}
+	// ss.Patterns = &table.Table{} // TODO remove
 	ss.RandSeeds.Init(100) // max 100 runs
 	ss.InitRandSeed(0)
 	ss.OpenPatterns()
@@ -139,6 +150,7 @@ func (ss *Sim) ConfigSim() {
 	ss.ConfigStats()
 }
 
+// func (ss *Sim) Defaults() 
 func (ss *Sim) ConfigEnv() {
 	// Can be called multiple times -- don't re-create
 	var tst *env.FixedTable
@@ -162,39 +174,10 @@ func (ss *Sim) ConfigEnv() {
 func (ss *Sim) ConfigNet(net *leabra.Network) {
 	net.SetRandSeed(ss.RandSeeds[0]) // init new separate random seed, using run = 0
 
-	name := net.AddLayer2D("Name", leabra.InputLayer, 1, 10)
-	iden := net.AddLayer2D("Identity", leabra.InputLayer, 1, 10)
-	color := net.AddLayer2D("Color", leabra.InputLayer, 1, 4)
-	food := net.AddLayer2D("FavoriteFood", leabra.InputLayer, 1, 4)
-	size := net.AddLayer2D("Size", leabra.InputLayer, 1, 3)
-	spec := net.AddLayer2D("Species", leabra.InputLayer, 1, 2)
-	toy := net.AddLayer2D("FavoriteToy", leabra.InputLayer, 1, 4)
+	nc := net.AddLayer4D("NeckerCube", leabra.InputLayer, 1, 2, 4, 2)
 
-	name.AddClass("Id") // share params
-	iden.AddClass("Id")
-
-	one2one := paths.NewOneToOne()
 	full := paths.NewFull()
-
-	net.BidirConnectLayers(name, iden, one2one)
-	net.BidirConnectLayers(color, iden, full)
-	net.BidirConnectLayers(food, iden, full)
-	net.BidirConnectLayers(size, iden, full)
-	net.BidirConnectLayers(spec, iden, full)
-	net.BidirConnectLayers(toy, iden, full)
-
-	iden.PlaceAbove(name)
-	color.PlaceAbove(iden)
-	// gend.Pos.XAlign = relpos.Right
-	food.PlaceAbove(iden)
-	food.Pos.XAlign = relpos.Right
-	size.PlaceAbove(color)
-	spec.PlaceAbove(color)
-	spec.Pos.XAlign = relpos.Right
-	spec.Pos.XOffset = 2
-	toy.PlaceAbove(food)
-	toy.Pos.XAlign = relpos.Right
-	toy.Pos.XOffset = 1
+	net.ConnectLayers(nc, nc, full, leabra.LateralPath)
 
 	net.Build()
 	net.Defaults()
@@ -205,24 +188,39 @@ func (ss *Sim) ConfigNet(net *leabra.Network) {
 // InitWeights initializes weights.
 func (ss *Sim) InitWeights(net *leabra.Network) {
 	net.InitWeights()
-	net.OpenWeightsFS(embedfs, "cats_dogs.wts")
+	net.OpenWeightsFS(embedfs, "necker_cube.wts")
 }
 
-func (ss *Sim) ApplyParams() {
+func (ss *Sim) ApplyParams() { 
 	ss.Params.ApplyAll(ss.Net)
+	ly := ss.Net.LayerByName("NeckerCube")
+	ly.Params.Act.Noise.Var = float64(ss.Noise)
+	ly.Params.Act.KNa.On = ss.KNaAdapt
+	ly.Params.Act.Update()
+	if ss.Loops != nil {
+		cyc := ss.Loops.Stacks[etime.Test].Loops[etime.Cycle]
+		cyc.Counter.Max = ss.Cycles
+		cyc.EventByName("Quarter1").AtCounter = ss.Cycles / 4
+		cyc.EventByName("Quarter2").AtCounter = 2 * (ss.Cycles / 4)
+		cyc.EventByName("MinusPhase:End").AtCounter = 3 * (ss.Cycles / 4)
+	}
 }
 
-////////  Init, utils
+////////////////////////////////////////////////////////////////////////////////
+// 	    Init, utils
 
 // Init restarts the run, and initializes everything, including network weights
 // and resets the epoch log table
 func (ss *Sim) Init() {
-	ss.Loops.ResetCounters()
-	// ss.SetRunName() // TODO remove?
+	ss.Loops.ResetCounters()	
+	ss.SetRunName() // TODO remove?
 	ss.InitRandSeed(0)
+	ss.GUI.StopNow()
 	ss.ApplyParams()
 	ss.StatsInit()
 	ss.NewRun()
+	// ss.ViewUpdate.RecordSyns()	//What are these?
+	// ss.ViewUpdate.Update()
 }
 
 // InitRandSeed initializes the random seed based on current training run number
@@ -243,19 +241,17 @@ func (ss *Sim) NetViewUpdater(mode enums.Enum) *leabra.NetViewUpdate {
 func (ss *Sim) ConfigLoops() {
 	ls := looper.NewStacks()
 
-	cycles := 100
-	plusPhase := 50
-
-	ev := ss.Envs.ByMode(Test).(*env.FixedTable)
-	ntrls := ev.Table.NumRows()
-
+	// ev := ss.Envs.ByMode(Test).(*env.FixedTable)
+	ntrls := 100 // was 	ntrls := ev.Table.NumRows()
+	cycles := ss.Cycles
+	// plusPhase := 50 // Needed? TODO
 	ls.AddStack(Test, Trial).
 		AddLevel(Epoch, 1).
 		AddLevel(Trial, ntrls).
 		AddLevel(Cycle, cycles)
 
-	leabra.LooperStandard(ls, ss.Net, ss.NetViewUpdater, cycles-plusPhase, cycles-1, Cycle, Trial, Train)
-
+	leabra.LooperStandard(ls, ss.Net, ss.NetViewUpdater, cycles-25, cycles-1, Cycle, Trial, Train)
+	// leabra.LooperSimCycleAndLearn(ls, ss.Net, &ss.Context, &ss.ViewUpdate) // std algo code // TODO ???
 	ls.Stacks[Test].OnInit.Add("Init", ss.Init)
 
 	ls.AddOnStartToLoop(Trial, "ApplyInputs", func(mode enums.Enum) {
@@ -296,10 +292,23 @@ func (ss *Sim) ApplyInputs(mode Modes) {
 		}
 	}
 	net.ApplyExts()
+
+	//TODO: Adapt following code to code above
+
+	// 	ly := net.LayerByName("NeckerCube")
+	// tsr := ss.Stats.F32Tensor("Inputs")
+	// tsr.SetShape([]int{16})
+	// if tsr.Float1D(0) != 1 {
+	// 	for i := range tsr.Values {
+	// 		tsr.Values[i] = 1
+	// 	}
+	// }
+	// ly.ApplyExt(tsr)
+
 }
 
 // NewRun intializes a new Run level of the model.
-func (ss *Sim) NewRun() {
+func (ss *Sim) NewRun() { //TODO: Q left off here Aug 26 
 	ctx := ss.Net.Context()
 	ss.Envs.ByMode(Test).Init(0)
 	ctx.Reset()
@@ -310,12 +319,12 @@ func (ss *Sim) NewRun() {
 
 func (ss *Sim) OpenPatterns() {
 	dt := table.New()
-	metadata.SetName(dt, "CatsAndDogs")
-	metadata.SetDoc(dt, "Face testing patterns")
-	err := dt.OpenFS(embedfs, "cats_dogs_pats.tsv", tensor.Tab)
-	if errors.Log(err) != nil {
-		fmt.Println(err)
-	}
+	// metadata.SetName(dt, "CatsAndDogs")
+	// metadata.SetDoc(dt, "Face testing patterns")
+	// err := dt.OpenFS(embedfs, "cats_dogs_pats.tsv", tensor.Tab)
+	// if errors.Log(err) != nil {
+		// fmt.Println(err)
+	// } // TODO remove 
 	ss.Patterns = dt
 }
 
