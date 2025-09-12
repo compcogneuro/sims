@@ -21,6 +21,7 @@ import (
 	"cogentcore.org/core/base/metadata"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/enums"
+	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/tree"
 	"cogentcore.org/lab/base/mpi"
@@ -582,6 +583,15 @@ func (ss *Sim) MakeToolbar(p *tree.Plan) {
 	ss.GUI.AddLooperCtrl(p, ss.Loops)
 
 	tree.Add(p, func(w *core.Separator) {})
+	ss.GUI.AddToolbarItem(p, egui.ToolbarItem{
+		Label:   "README",
+		Icon:    icons.FileMarkdown,
+		Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
+		Active:  egui.ActiveAlways,
+		Func: func() {
+			core.TheApp.OpenURL(ss.Config.URL)
+		},
+	})
 }
 
 func (ss *Sim) RunNoGUI() {

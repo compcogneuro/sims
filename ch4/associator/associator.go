@@ -25,6 +25,8 @@ import (
 	"cogentcore.org/lab/base/mpi"
 	"cogentcore.org/lab/base/randx"
 	"cogentcore.org/lab/plot"
+	"cogentcore.org/lab/stats/cluster"
+	"cogentcore.org/lab/stats/metric"
 	"cogentcore.org/lab/stats/stats"
 	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensor"
@@ -662,6 +664,13 @@ func (ss *Sim) StatCounters(mode, level enums.Enum) string {
 	return counters
 }
 
+// ClusterPlot generates a cluster plot of input data.
+func (ss *Sim) ClusterPlot() {
+	plt := ss.GUI.Tabs.NewPlot("ClusterPlot")
+	trn := ss.Envs.ByMode(Train).(*env.FixedTable)
+	cluster.PlotFromTable(plt, trn.Table, metric.MetricL2Norm, cluster.Min, "Input", "Name")
+}
+
 //////// GUI
 
 // ConfigGUI configures the Cogent Core GUI interface for this simulation.
@@ -682,6 +691,9 @@ func (ss *Sim) ConfigGUI(b tree.Node) {
 	nv.SceneXYZ().Camera.Pose.Pos.Set(0, 1, 2.75)
 	nv.SceneXYZ().Camera.LookAt(math32.Vec3(0, 0, 0), math32.Vec3(0, 1, 0))
 
+	ss.GUI.Tabs.NewPlot("ClusterPlot")
+
+	ss.GUI.Tabs.SelectTabIndex(0)
 	ss.StatsInit()
 	ss.GUI.FinalizeGUI(false)
 }
@@ -689,6 +701,15 @@ func (ss *Sim) ConfigGUI(b tree.Node) {
 func (ss *Sim) MakeToolbar(p *tree.Plan) {
 	ss.GUI.AddLooperCtrl(p, ss.Loops)
 
+	ss.GUI.AddToolbarItem(p, egui.ToolbarItem{
+		Label:   "Cluster Plot",
+		Icon:    icons.BarChart,
+		Tooltip: "Generate a cluster plot of the input patterns.",
+		Active:  egui.ActiveAlways,
+		Func: func() {
+			ss.ClusterPlot()
+		},
+	})
 	tree.Add(p, func(w *core.Separator) {})
 	ss.GUI.AddToolbarItem(p, egui.ToolbarItem{
 		Label:   "New Seed",
