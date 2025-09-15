@@ -566,12 +566,16 @@ func (ss *Sim) StatCounters(mode, level enums.Enum) string {
 
 // ClusterPlots computes all the cluster plots from the faces input data.
 func (ss *Sim) ClusterPlots() {
-	dt := table.NewView(ss.Patterns)
 
-	cluster.PlotFromTable(ss.GUI.Tabs.NewPlot("ClustFaces"), dt, metric.MetricL2Norm, cluster.Min, "Input", "Name")
-	cluster.PlotFromTable(ss.GUI.Tabs.NewPlot("ClustEmote"), dt, metric.MetricL2Norm, cluster.Min, "Emotion", "Name")
-	cluster.PlotFromTable(ss.GUI.Tabs.NewPlot("ClustGend"), dt, metric.MetricL2Norm, cluster.Min, "Gender", "Name")
-	cluster.PlotFromTable(ss.GUI.Tabs.NewPlot("ClustIdent"), dt, metric.MetricL2Norm, cluster.Min, "Identity", "Name")
+	pt := table.New()
+	cluster.PlotFromTable(pt, dt, metric.MetricL2Norm, cluster.Min, "Input", "Name")
+	ss.GUI.Tabs.NewPlot("ClustFaces").SetTable(pt)
+	cluster.PlotFromTable(pt, dt, metric.MetricL2Norm, cluster.Min, "Emotion", "Name")
+	ss.GUI.Tabs.NewPlot("ClustEmote").SetTable(pt)
+	cluster.PlotFromTable(pt, dt, metric.MetricL2Norm, cluster.Min, "Gender", "Name")
+	ss.GUI.Tabs.NewPlot("ClustGend").SetTable(pt)
+	cluster.PlotFromTable(pt, dt, metric.MetricL2Norm, cluster.Min, "Identity", "Name")
+	ss.GUI.Tabs.NewPlot("ClustIdent").SetTable(pt)
 	ss.ProjectionPlot()
 }
 
