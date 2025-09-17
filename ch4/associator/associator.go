@@ -668,9 +668,7 @@ func (ss *Sim) StatCounters(mode, level enums.Enum) string {
 func (ss *Sim) ClusterPlot() {
 	plt := ss.GUI.Tabs.NewPlot("ClusterPlot")
 	trn := ss.Envs.ByMode(Train).(*env.FixedTable)
-	pt := table.New()
-	cluster.PlotFromTable(pt, trn.Table, metric.MetricL2Norm, cluster.Min, "Input", "Name")
-	plt.SetTable(pt)
+	cluster.PlotFromTable(plt, trn.Table, metric.MetricL2Norm, cluster.Min, "Input", "Name")
 }
 
 //////// GUI

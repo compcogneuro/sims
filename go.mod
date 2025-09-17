@@ -4,7 +4,7 @@ go 1.23.4
 
 require (
 	cogentcore.org/core v0.3.13-0.20250909222513-1cba37a21a69
-	cogentcore.org/lab v0.1.3-0.20250914185213-94f15226f701
+	cogentcore.org/lab v0.1.3-0.20250917143805-07c473dcb032
 	github.com/anthonynsimon/bild v0.13.0
 	github.com/emer/emergent/v2 v2.0.0-dev0.1.7.0.20250809001012-15a5e68996b3
 	github.com/emer/etensor v0.0.0-20250128231607-f3fea92f0b80
