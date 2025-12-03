@@ -1,7 +1,0 @@
-_H:	$Name	$Group	%Colors[2:0,0]<2:1,2>	%Colors[2:0,1]	%Words[2:0,0]<2:1,2>	%Words[2:0,1]	%Output[2:0,0]<2:1,2>	%Output[2:0,1]	%PFC[2:0,0]<2:1,2>	%PFC[2:0,1]
-_D:	Word_Ctrl	Word	0	0	0	1	0	1	0	1
-_D:	Word_Conf	Word	1	0	0	1	0	1	0	1
-_D:	Word_Cong	Word	0	1	0	1	0	1	0	1
-_D:	Color_Ctrl	Color	0	1	0	0	0	1	1	0
-_D:	Color_Conf	Color	0	1	1	0	0	1	1	0
-_D:	Color_Cong	Color	0	1	0	1	0	1	1	0

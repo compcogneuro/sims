@@ -42,7 +42,7 @@ import (
 	"github.com/emer/leabra/v2/leabra"
 )
 
-//go:embed trained.wts.gz sg_rules.txt sg_tests.txt sg_probes.txt
+//go:embed trained.wts.gz sg_rules_svo.txt sg_tests_svo.txt sg_probes.txt
 var content embed.FS
 
 //go:embed *.png README.md
@@ -253,8 +253,8 @@ func (ss *Sim) ConfigEnv() {
 
 	// note: names must be standard here!
 	trn.Name = etime.Train.String()
-	trn.Seq.Max = 100 // sequences per epoch training
-	trn.OpenRulesFromAsset("sg_rules.txt")
+	trn.Seq.Max = 100                       // sequences per epoch training
+	trn.Rules.OpenRules("sg_rules_svo.txt") // modify this line to change the syntax rules for training
 	trn.PPassive = 0.2
 	trn.Words = SGWords
 	trn.Roles = SGRoles
@@ -265,8 +265,8 @@ func (ss *Sim) ConfigEnv() {
 	trn.Validate()
 
 	tst.Name = etime.Test.String()
-	tst.Seq.Max = 14
-	tst.OpenRulesFromAsset("sg_tests.txt")
+	tst.Seq.Max = 13
+	tst.Rules.OpenRules("sg_tests_svo.txt") // modify this line to change the syntax rules for testing
 	//	tst.Rules.OpenRules("sg_tests.txt")
 	tst.PPassive = 0 // passive explicitly marked
 	tst.Words = SGWords

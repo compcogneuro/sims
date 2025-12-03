@@ -1,5 +1,0 @@
-_H:	$Name	%Input[2:0,0]<2:1,4>	%Input[2:0,1]	%Input[2:0,2]	%Input[2:0,3]	%Output[2:0,0]<2:1,2>	%Output[2:0,1]
-_D:	Event_0	1	0	1	0	1	0
-_D:	Event_1	0	1	0	1	1	0
-_D:	Event_2	1	1	0	0	0	1
-_D:	Event_3	0	0	1	1	0	1
