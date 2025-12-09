@@ -64,8 +64,9 @@ var ParamSets = params.Sets{
 			Params: params.Params{
 				"Path.Learn.Norm.On":     "true",
 				"Path.Learn.Momentum.On": "true",
+				"Path.Learn.Momentum.C":  "0.95", // added to increase momentum
 				"Path.Learn.WtBal.On":    "true",
-				"Path.Learn.Lrate":       "0.04", // critical for lrate sched
+				"Path.Learn.Lrate":       "0.02", // critical for lrate sched, originally 0.04
 			}},
 		{Sel: "Layer", Desc: "more inhibition is better",
 			Params: params.Params{
@@ -109,7 +110,7 @@ var ParamSets = params.Sets{
 			}},
 		{Sel: ".BackPath", Desc: "weaker back -- .2 > .3, .1",
 			Params: params.Params{
-				"Path.WtScale.Rel": "0.2",
+				"Path.WtScale.Rel": "0.2", // 0.2
 			}},
 		{Sel: ".CTCtxtPath", Desc: "yes weight balance",
 			Params: params.Params{
@@ -130,7 +131,7 @@ var ParamSets = params.Sets{
 			}},
 		{Sel: ".CtxtBack", Desc: "gest CT - > encode CT basically",
 			Params: params.Params{
-				"Path.WtScale.Rel": "1",
+				"Path.WtScale.Rel": "2.5", // originally 1
 			}},
 		{Sel: ".FmInput", Desc: "from localist inputs -- 1 == .3",
 			Params: params.Params{
@@ -162,7 +163,7 @@ type Config struct {
 	NRuns int `default:"1" min:"1"`
 
 	// total number of epochs per run
-	NEpochs int `default:"500"`
+	NEpochs int `default:"1500"` // originally 500
 
 	// stop run after this number of perfect, zero-error epochs.
 	NZero int `default:"5"`
@@ -237,7 +238,7 @@ func (ss *Sim) ConfigAll() {
 
 func (ss *Sim) ConfigEnv() {
 	// Can be called multiple times -- don't re-create
-	var trn, tst, probe *SentGenEnv
+	var trn, tst, probe, trnL2 *SentGenEnv
 	var nprobe *ProbeEnv
 	if len(ss.Envs) == 0 {
 		trn = &SentGenEnv{}
@@ -298,8 +299,43 @@ func (ss *Sim) ConfigEnv() {
 	probe.Init(0)
 	nprobe.Init(0)
 
+	// Setup L2 (Latin/SOV) Environment
+	if len(ss.Envs) == 0 {
+		trnL2 = &SentGenEnv{}
+	} else {
+		trnL2 = &SentGenEnv{}
+	}
+
+	trnL2.Name = "TrainL2"
+	trnL2.Seq.Max = 100
+	trnL2.Rules.OpenRules("sg_rules_sov.txt")
+	trnL2.PPassive = 0.2
+	trnL2.Words = SGWords
+	trnL2.Roles = SGRoles
+	trnL2.Fillers = SGFillers
+	trnL2.WordTrans = SGWordTrans
+	trnL2.AmbigVerbs = SGAmbigVerbs
+	trnL2.AmbigNouns = SGAmbigNouns
+	trnL2.Validate()
+	trnL2.Init(0)
+
 	// note: names must be in place when adding
-	ss.Envs.Add(trn, tst, probe, nprobe)
+	ss.Envs.Add(trn, tst, probe, nprobe, trnL2)
+}
+
+func (ss *Sim) SwitchToL2() {
+	// Get the L2 environment we added earlier
+	l2Env := ss.Envs["TrainL2"]
+
+	// Set it as the current Training environment
+	ss.Envs[etime.Train.String()] = l2Env
+
+	// Reset the environment counters (start at sentence 0)
+	l2Env.Init(0)
+
+	// Update the GUI to show we switched
+	ss.Stats.SetString("RunName", "L2_SOV_Phase")
+	core.MessageDialog(nil, "Switched to L2 (SOV) Rules! Weights preserved.", "Environment Switched")
 }
 
 func (ss *Sim) ConfigNet(net *leabra.Network) {
@@ -327,11 +363,11 @@ func (ss *Sim) ConfigNet(net *leabra.Network) {
 	in := net.AddLayer2D("Input", 10, 5, leabra.InputLayer)
 	role := net.AddLayer2D("Role", 9, 1, leabra.InputLayer)
 	fill := net.AddLayer2D("Filler", 11, 5, leabra.TargetLayer)
-	enc, encct, encp := net.AddDeep2D("Encode", 12, 12) // 12x12 better..
+	enc, encct, encp := net.AddDeep2D("Encode", 14, 14) // originally 12x12
 	enc.AddClass("Encode")
 	encct.AddClass("Encode")
-	dec := net.AddLayer2D("Decode", 12, 12, leabra.SuperLayer)
-	gest, gestct := net.AddDeepNoPulvinar2D("Gestalt", 12, 12) // 12x12 def better with full
+	dec := net.AddLayer2D("Decode", 14, 14, leabra.SuperLayer)
+	gest, gestct := net.AddDeepNoPulvinar2D("Gestalt", 16, 16) // 12x12 def better with full
 	gest.AddClass("Gestalt")
 	gestct.AddClass("Gestalt")
 
@@ -723,7 +759,9 @@ func (ss *Sim) ActiveUnitNames(lnm string, nms []string, thr float32) []string {
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.ActM > thr {
-			acts = append(acts, nms[ni])
+			if ni < len(nms) {
+				acts = append(acts, nms[ni])
+			}
 		}
 	}
 	return acts
@@ -768,6 +806,7 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.SetMeta(etime.Test, etime.Trial, "XAxisRotation", "-45")
 	ss.Logs.SetMeta(etime.Test, etime.Trial, "Err:On", "+")
 	ss.Logs.SetMeta(etime.Test, etime.Trial, "Output:On", "+")
+	ss.Logs.SetMeta(etime.Test, etime.Trial, "PredSSE:On", "+")
 }
 
 // Log is the main logging function, handles special things for different scopes
@@ -841,13 +880,23 @@ func (ss *Sim) MakeToolbar(p *tree.Plan) {
 		},
 	})
 
+	ss.GUI.AddToolbarItem(p, egui.ToolbarItem{
+		Label:   "Switch to L2",
+		Icon:    icons.NextPlan,
+		Tooltip: "Switches the training environment to SOV rules WITHOUT resetting weights.",
+		Active:  egui.ActiveAlways,
+		Func: func() {
+			ss.SwitchToL2()
+		},
+	})
+
 	tree.Add(p, func(w *core.Separator) {})
 	ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Probe all",
 		Icon:    icons.RunCircle,
 		Tooltip: "analyzes the representations using different kinds of probes, generating SentClust and NounClust",
 		Active:  egui.ActiveAlways,
 		Func: func() {
-			go ss.ProbeAll()
+			ss.ProbeAll()
 		},
 	})
 
