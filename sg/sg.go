@@ -163,7 +163,7 @@ type Config struct {
 	NRuns int `default:"1" min:"1"`
 
 	// total number of epochs per run
-	NEpochs int `default:"1500"` // originally 500
+	NEpochs int `default:"500"`
 
 	// stop run after this number of perfect, zero-error epochs.
 	NZero int `default:"5"`
