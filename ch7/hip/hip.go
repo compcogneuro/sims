@@ -210,6 +210,11 @@ type Sim struct {
 	// if true, run in pretrain mode
 	PretrainMode bool `display:"-"`
 
+	// DGLesion controls whether a 50% lesion is applied to the DG (dentate gyrus) layer
+	// before AC list training begins. The lesion is automatically removed at the start of
+	// each new Run so that AB training is always unaffected.
+	DGLesion bool
+
 	// pool patterns vocabulary
 	PoolVocab patgen.Vocab `display:"-"`
 
@@ -474,6 +479,10 @@ func (ss *Sim) ConfigLoops() {
 				ss.Stats.SetInt("FirstPerfect", epc)
 				trn.Config(table.NewIndexView(ss.TrainAC))
 				trn.Validate()
+				// Apply DG lesion for AC training if the flag is set
+				if ss.DGLesion {
+					ss.Net.LayerByName("DG").LesionNeurons(0.5)
+				}
 			}
 		}
 	})
@@ -548,6 +557,8 @@ func (ss *Sim) NewRun() {
 	ctx.Reset()
 	ctx.Mode = etime.Train
 	ss.Net.InitWeights()
+	// Restore DG to its full (un-lesioned) state for AB training
+	ss.Net.LayerByName("DG").UnLesionNeurons()
 	ss.InitStats()
 	ss.StatCounters()
 	ss.Logs.ResetLog(etime.Train, etime.Epoch)

@@ -29,11 +29,11 @@ type LEDEnv struct {
 	// visual processing params
 	Vis Vis
 
-	// minimum LED number to draw (0-19)
-	MinLED int `min:"0" max:"19"`
+	// minimum LED number to draw (0-24)
+	MinLED int `min:"0" max:"24"`
 
-	// maximum LED number to draw (0-19)
-	MaxLED int `min:"0" max:"19"`
+	// maximum LED number to draw (0-24)
+	MaxLED int `min:"0" max:"24"`
 
 	// current LED number that was drawn
 	CurLED int `edit:"-"`
@@ -66,7 +66,7 @@ func (ev *LEDEnv) States() env.Elements {
 	els := env.Elements{
 		{"Image", []int{isz.Y, isz.X}, []string{"Y", "X"}},
 		{"V1", sz, nms},
-		{"Output", []int{4, 5}, []string{"Y", "X"}},
+		{"Output", []int{5, 5}, []string{"Y", "X"}},
 	}
 	return els
 }
@@ -102,7 +102,7 @@ func (ev *LEDEnv) Init(run int) {
 	ev.Trial.Scale = etime.Trial
 	ev.Trial.Init()
 	ev.Trial.Cur = -1 // init state -- key so that first Step() = 0
-	ev.Output.SetShape([]int{4, 5}, "Y", "X")
+	ev.Output.SetShape([]int{5, 5}, "Y", "X")
 }
 
 func (ev *LEDEnv) Step() bool {

@@ -151,7 +151,7 @@ func (ss *Sim) ConfigEnv() {
 	trn.Name = etime.Train.String()
 	trn.Defaults()
 	trn.MinLED = 0
-	trn.MaxLED = 17 // exclude last 2 by default
+	trn.MaxLED = 22 // exclude last 2 novel items by default
 	if ss.Config.Env.Env != nil {
 		params.ApplyMap(trn, ss.Config.Env.Env, ss.Config.Debug)
 	}
@@ -159,8 +159,8 @@ func (ss *Sim) ConfigEnv() {
 
 	novTrn.Name = etime.Analyze.String()
 	novTrn.Defaults()
-	novTrn.MinLED = 18
-	novTrn.MaxLED = 19 // only last 2 items
+	novTrn.MinLED = 23
+	novTrn.MaxLED = 24 // only last 2 novel items
 	if ss.Config.Env.Env != nil {
 		params.ApplyMap(novTrn, ss.Config.Env.Env, ss.Config.Debug)
 	}
@@ -173,8 +173,8 @@ func (ss *Sim) ConfigEnv() {
 	tst.Name = etime.Test.String()
 	tst.Defaults()
 	tst.MinLED = 0
-	tst.MaxLED = 19     // all by default
-	tst.Trial.Max = 500 // 0 // 1000 is too long!
+	tst.MaxLED = 24      // all 25 patterns by default
+	tst.Trial.Max = 500  // 0 // 1000 is too long!
 	if ss.Config.Env.Env != nil {
 		params.ApplyMap(tst, ss.Config.Env.Env, ss.Config.Debug)
 	}
@@ -192,7 +192,7 @@ func (ss *Sim) ConfigNet(net *leabra.Network) {
 	v1 := net.AddLayer4D("V1", 10, 10, 5, 4, leabra.InputLayer)
 	v4 := net.AddLayer4D("V4", 5, 5, 7, 7, leabra.SuperLayer)
 	it := net.AddLayer2D("IT", 10, 10, leabra.SuperLayer)
-	out := net.AddLayer2D("Output", 4, 5, leabra.TargetLayer)
+	out := net.AddLayer2D("Output", 5, 5, leabra.TargetLayer)
 
 	v1.SetSampleIndexesShape(emer.CenterPoolIndexes(v1, 2), emer.CenterPoolShape(v1, 2))
 	v4.SetSampleIndexesShape(emer.CenterPoolIndexes(v4, 2), emer.CenterPoolShape(v4, 2))
@@ -552,7 +552,7 @@ func (ss *Sim) ConfigLogItems() {
 	ss.Logs.AddItem(&elog.Item{
 		Name:        "CatErr",
 		Type:        reflect.Float64,
-		CellShape:   []int{20},
+		CellShape:   []int{25},
 		DimNames:    []string{"Cat"},
 		Plot:        true,
 		Range:       minmax.F32{Min: 0},

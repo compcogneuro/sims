@@ -104,6 +104,9 @@ func (ld *LEDraw) DrawSeg(seg LEDSegs) {
 func (ld *LEDraw) DrawLED(num int) {
 	led := LEData[num]
 	for _, seg := range led {
+		if seg == NoSeg {
+			continue
+		}
 		ld.DrawSeg(seg)
 	}
 }
@@ -122,30 +125,42 @@ const (
 	CenterH
 	CenterV
 	LEDSegsN
+	NoSeg LEDSegs = -1 // sentinel for unused slots in 4-element segment arrays
 )
 
-var LEData = [][3]LEDSegs{
-	{CenterH, CenterV, Right},
-	{Top, CenterV, Bottom},
-	{Top, Right, Bottom},
-	{Bottom, CenterV, Right},
-	{Left, CenterH, Right},
+// LEData contains the segment combinations for each LED object.
+// The first 20 entries are the original 3-segment combinations (all C(6,3)=20 unique patterns).
+// Entries 20-24 are new 4-segment combinations that form more complex stimuli.
+// Entries 23 and 24 are reserved as "novel" objects not trained in the first phase.
+var LEData = [][4]LEDSegs{
+	{CenterH, CenterV, Right, NoSeg},
+	{Top, CenterV, Bottom, NoSeg},
+	{Top, Right, Bottom, NoSeg},
+	{Bottom, CenterV, Right, NoSeg},
+	{Left, CenterH, Right, NoSeg},
 
-	{Left, CenterV, CenterH},
-	{Left, CenterV, Right},
-	{Left, CenterV, Bottom},
-	{Left, CenterH, Top},
-	{Left, CenterH, Bottom},
+	{Left, CenterV, CenterH, NoSeg},
+	{Left, CenterV, Right, NoSeg},
+	{Left, CenterV, Bottom, NoSeg},
+	{Left, CenterH, Top, NoSeg},
+	{Left, CenterH, Bottom, NoSeg},
 
-	{Top, CenterV, Right},
-	{Bottom, CenterV, CenterH},
-	{Right, CenterH, Bottom},
-	{Top, CenterH, Bottom},
-	{Left, Top, Right},
+	{Top, CenterV, Right, NoSeg},
+	{Bottom, CenterV, CenterH, NoSeg},
+	{Right, CenterH, Bottom, NoSeg},
+	{Top, CenterH, Bottom, NoSeg},
+	{Left, Top, Right, NoSeg},
 
-	{Top, CenterH, Right},
-	{Left, CenterV, Top},
-	{Top, Left, Bottom},
-	{Left, Bottom, Right},
-	{Top, CenterV, CenterH},
+	{Top, CenterH, Right, NoSeg},
+	{Left, CenterV, Top, NoSeg},
+	{Top, Left, Bottom, NoSeg},
+	{Left, Bottom, Right, NoSeg},
+	{Top, CenterV, CenterH, NoSeg},
+
+	// New 4-segment patterns (indices 20-24)
+	{Bottom, Left, Right, Top},   // 20: rectangle (box outline)
+	{Left, Right, CenterH, CenterV}, // 21: H crossed with I
+	{Bottom, Top, CenterH, CenterV}, // 22: double crossbar (like = with verticals)
+	{Bottom, Right, CenterH, CenterV}, // 23: novel -- complex bracket right
+	{Left, Top, CenterH, CenterV},    // 24: novel -- complex bracket left
 }

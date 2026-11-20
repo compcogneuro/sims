@@ -16,6 +16,52 @@ This repository contains the neural network simulation models for the [CCN Textb
 
 * See https://github.com/compcogneuro/sims/releases for full history
 
+## Running Locally
+
+### Prerequisites
+
+* [Go 1.23 or newer](https://go.dev/dl/) — the simulations are written in Go.
+* A C compiler (required by the Go graphics stack):
+  * **macOS**: Xcode Command Line Tools — run `xcode-select --install`
+  * **Linux**: GCC — `sudo apt install gcc` (Debian/Ubuntu) or equivalent
+  * **Windows**: [TDM-GCC-64](https://jmeubank.github.io/tdm-gcc/)
+
+### Getting this fork
+
+This repository includes a branch with extended `objrec` stimuli. To clone it:
+
+```bash
+git clone https://github.com/compcogneuro/sims.git
+cd sims
+git checkout copilot/edit-objrec-change-stimuli
+```
+
+### Running a simulation
+
+Each simulation lives in its own subdirectory and is a standalone Go program.  To run the `objrec` simulation (Chapter 6):
+
+```bash
+cd ch6/objrec
+go run .
+```
+
+The GUI will open automatically.  To run without the GUI (headless, e.g. on a server):
+
+```bash
+cd ch6/objrec
+go run . -nogui
+```
+
+Other simulations follow the same pattern — navigate to the relevant chapter/sim directory and run `go run .`.
+
+### Running all simulations (build only)
+
+From the repository root you can build every simulation at once to confirm everything compiles:
+
+```bash
+go build ./...
+```
+
 ## Developer notes
 
 *This is not relevant for regular users*
